@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: DrizzleAdapter(db) as Adapter,
   providers: [
     CredentialsProvider({

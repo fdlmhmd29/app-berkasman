@@ -6,7 +6,13 @@ import LogoutButton from "@/components/logout-button";
 
 export default async function HomePage() {
   // Mengambil sesi aktif dari server
-  const session = await getServerSession(authOptions);
+  let session = null;
+
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error("[HOME_SESSION_ERROR]", error);
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4">

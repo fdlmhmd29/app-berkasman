@@ -7,8 +7,14 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 
+const authSecret =
+  process.env.NEXTAUTH_SECRET ??
+  (process.env.NODE_ENV !== "production"
+    ? "dev-only-nextauth-secret-change-me"
+    : undefined);
+
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: authSecret,
   adapter: DrizzleAdapter(db) as Adapter,
   providers: [
     CredentialsProvider({

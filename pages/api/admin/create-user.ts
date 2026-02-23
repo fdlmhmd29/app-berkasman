@@ -73,7 +73,7 @@ export default async function handler(
     });
 
     return res.status(201).json({ message: "Akun pengguna berhasil dibuat!" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handling error validasi Zod
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.issues[0].message });

@@ -16,6 +16,11 @@ export default async function handler(
   }
 
   const { id } = req.query;
+  const userId = Array.isArray(id) ? id[0] : id;
+
+  if (!userId) {
+    return res.status(400).json({ error: "ID user tidak valid" });
+  }
 
   // UPDATE USER
   if (req.method === "PUT") {
@@ -24,7 +29,7 @@ export default async function handler(
       await db
         .update(users)
         .set({ name, role })
-        .where(eq(users.id, Number(id)));
+        .where(eq(users.id, userId));
       return res.status(200).json({ message: "User berhasil diperbarui" });
     } catch (error) {
       return res.status(500).json({ error: "Gagal memperbarui user" });
@@ -35,13 +40,13 @@ export default async function handler(
   if (req.method === "DELETE") {
     try {
       // Cegah admin menghapus dirinya sendiri
-      if (Number(id) === Number((session.user as any).id)) {
+      if (userId === session.user.id) {
         return res
           .status(400)
           .json({ error: "Anda tidak bisa menghapus akun sendiri" });
       }
 
-      await db.delete(users).where(eq(users.id, Number(id)));
+      await db.delete(users).where(eq(users.id, userId));
       return res.status(200).json({ message: "User berhasil dihapus" });
     } catch (error) {
       return res.status(500).json({ error: "Gagal menghapus user" });

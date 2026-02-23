@@ -74,8 +74,9 @@ export default function CreateUserPage() {
 
       setMessage({ type: "success", text: "Pengguna berhasil ditambahkan!" });
       form.reset(); // Kosongkan form setelah sukses
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Terjadi kesalahan";
+      setMessage({ type: "error", text: message });
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { GetServerSideProps } from "next";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]";
+import { db } from "@/lib/db";
+import { users as usersTable } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
 import Link from "next/link";
 import {
   Table,
@@ -36,13 +39,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   UserPlus,
-  Mail,
   ChevronLeft,
   Loader2,
   MoreHorizontal,
   Trash2,
   Edit3,
-  Shield,
 } from "lucide-react";
 import {
   Select,
@@ -52,16 +53,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function UsersListPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
+type UserRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: string | null;
+};
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+export default function UsersListPage({
+  initialUsers,
+}: {
+  initialUsers: UserRow[];
+}) {
+  const [users, setUsers] = useState<UserRow[]>(initialUsers);
+  const [loading, setLoading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -71,7 +79,7 @@ export default function UsersListPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) return;
     const res = await fetch(`/api/admin/user-action?id=${id}`, {
       method: "DELETE",
@@ -80,12 +88,14 @@ export default function UsersListPage() {
     else alert("Gagal menghapus user");
   };
 
-  const handleEditOpen = (user: any) => {
+  const handleEditOpen = (user: UserRow) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
 
   const handleUpdate = async () => {
+    if (!selectedUser) return;
+
     setIsUpdating(true);
     const res = await fetch(`/api/admin/user-action?id=${selectedUser.id}`, {
       method: "PUT",
@@ -200,16 +210,18 @@ export default function UsersListPage() {
               <Input
                 value={selectedUser?.name || ""}
                 onChange={(e) =>
-                  setSelectedUser({ ...selectedUser, name: e.target.value })
+                  setSelectedUser((prev) =>
+                    prev ? { ...prev, name: e.target.value } : prev
+                  )
                 }
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Role</label>
               <Select
-                value={selectedUser?.role}
+                value={selectedUser?.role ?? undefined}
                 onValueChange={(val) =>
-                  setSelectedUser({ ...selectedUser, role: val })
+                  setSelectedUser((prev) => (prev ? { ...prev, role: val } : prev))
                 }
               >
                 <SelectTrigger>
@@ -246,5 +258,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || session.user.role !== "Super Admin") {
     return { redirect: { destination: "/", permanent: false } };
   }
-  return { props: {} };
+
+  const initialUsers = await db
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+    })
+    .from(usersTable)
+    .orderBy(desc(usersTable.id));
+
+  return { props: { initialUsers } };
 };

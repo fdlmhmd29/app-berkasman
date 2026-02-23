@@ -91,8 +91,9 @@ export default function CreateUserPage() {
         text: "Akun pengguna baru berhasil dibuat dan disimpan ke database.",
       });
       form.reset();
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Terjadi kesalahan";
+      setMessage({ type: "error", text: message });
     } finally {
       setIsLoading(false);
     }
